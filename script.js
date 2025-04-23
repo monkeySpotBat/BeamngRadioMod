@@ -1,91 +1,110 @@
-const clientId = "55dc9af460ef459ca11eca67c9ec951b"; // aus Spotify Dashboard
-const redirectUri = "https://beamngradiomod.vercel.app/callback.html";  // Überprüfen, dass diese URI auch in Spotify Developer korrekt ist
-
+const clientId = "55dc9af460ef459ca11eca67c9ec951b";
+const redirectUri = encodeURIComponent("https://beamngradiomod.vercel.app/callback.html");
 let token = localStorage.getItem("spotify_token");
 
-// Funktion für die Anmeldung und Authentifizierung bei Spotify
+// Spotify Login Funktion
 async function login() {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-playback-state%20user-modify-playback-state&show_dialog=true`;
+    const scope = 'user-read-playback-state user-modify-playback-state';
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&show_dialog=true`;
     window.location.href = authUrl;
 }
 
-// Funktion für das Abspielen des aktuellen Songs
-async function play() {
-    await fetch("https://api.spotify.com/v1/me/player/play", {
-        method: "PUT",
-        headers: { Authorization: "Bearer " + token }
-    });
-}
-
-// Funktion für das Pausieren des aktuellen Songs
-async function pause() {
-    await fetch("https://api.spotify.com/v1/me/player/pause", {
-        method: "PUT",
-        headers: { Authorization: "Bearer " + token }
-    });
-}
-
-// Funktion für das Überspringen zum nächsten Song
-async function next() {
-    await fetch("https://api.spotify.com/v1/me/player/next", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token }
-    });
-}
-
-// Die Logik, die ausgeführt wird, wenn die Seite vollständig geladen ist
-window.onload = async () => {
-    if (token) {
-        // Wenn ein Token vorhanden ist, zeige die Steuerungselemente an
-        document.getElementById("controls").style.display = "block";
-
-        // Abrufen der aktuell wiedergegebenen Song-Informationen
-        const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-            headers: { Authorization: "Bearer " + token }
+// API Request Helper
+async function spotifyApiRequest(url, method = 'GET') {
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        if (response.status === 401) {
+            await handleUnauthorized();
+            return null;
+        }
+        
+        return response.ok ? await response.json() : null;
+    } catch (error) {
+        console.error('API Request Error:', error);
+        return null;
+    }
+}
 
-        if (res.ok) {
-            const data = await res.json();
-            // Anzeige der Song-Informationen
-            document.getElementById("song-info").innerText = `${data.item.name} – ${data.item.artists[0].name}`;
+// Handle Unauthorized
+async function handleUnauthorized() {
+    localStorage.removeItem("spotify_token");
+    token = null;
+    alert("Session expired. Please login again.");
+    window.location.reload();
+}
+
+// Player Controls
+async function play() {
+    await spotifyApiRequest("https://api.spotify.com/v1/me/player/play", "PUT");
+}
+
+async function pause() {
+    await spotifyApiRequest("https://api.spotify.com/v1/me/player/pause", "PUT");
+}
+
+async function next() {
+    await spotifyApiRequest("https://api.spotify.com/v1/me/player/next", "POST");
+}
+
+// Update Player UI
+async function updatePlayerUI() {
+    const controls = document.getElementById("controls");
+    const loginBtn = document.getElementById("login-button");
+    const songInfo = document.getElementById("song-info");
+    
+    if (token) {
+        const playerData = await spotifyApiRequest("https://api.spotify.com/v1/me/player");
+        const currentTrack = await spotifyApiRequest("https://api.spotify.com/v1/me/player/currently-playing");
+        
+        if (playerData) {
+            controls.style.display = "block";
+            loginBtn.style.display = "none";
+            
+            if (currentTrack && currentTrack.item) {
+                songInfo.innerText = `${currentTrack.item.name} - ${currentTrack.item.artists[0].name}`;
+            } else {
+                songInfo.innerText = "No track playing";
+            }
         } else {
-            alert("Fehler beim Abrufen der Song-Informationen");
+            controls.style.display = "none";
+            loginBtn.style.display = "block";
         }
     } else {
-        // Wenn kein Token vorhanden ist, zeige eine Login-Schaltfläche an
-        document.getElementById("login-button").style.display = "block";
-    }
-};
-
-// Callback-Logik für den Authentifizierungsvorgang
-if (window.location.hash) {
-    const params = new URLSearchParams(window.location.hash.substring(1)); // Extrahiert die URL-Parameter
-    const accessToken = params.get("access_token");
-
-    if (accessToken) {
-        // Speichern des Tokens in LocalStorage und Weiterleitung
-        localStorage.setItem("spotify_token", accessToken);
-        window.location.href = "/";  // Zurück zur Startseite oder einer anderen Seite
+        controls.style.display = "none";
+        loginBtn.style.display = "block";
     }
 }
 
-async function checkToken() {
-    const response = await fetch("https://api.spotify.com/v1/me", {
-        headers: { Authorization: "Bearer " + token }
-    });
-    if (response.status === 401) {
-        localStorage.removeItem("spotify_token");
-        token = null;
-        alert("Session abgelaufen. Bitte neu anmelden.");
-        window.location.reload();
+// Handle Callback
+function handleCallback() {
+    if (window.location.hash) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const newToken = params.get("access_token");
+        
+        if (newToken) {
+            localStorage.setItem("spotify_token", newToken);
+            token = newToken;
+            window.history.replaceState({}, document.title, window.location.pathname);
+            updatePlayerUI();
+        }
     }
 }
 
-// Füge dies zu window.onload hinzu:
-window.onload = async () => {
-    token = localStorage.getItem("spotify_token");
-    if (token) {
-        await checkToken();
-        // Rest deiner Logik...
-    }
-};
+// Initialize
+async function init() {
+    handleCallback();
+    await updatePlayerUI();
+    
+    // Event listeners
+    document.getElementById("play-btn").addEventListener("click", play);
+    document.getElementById("pause-btn").addEventListener("click", pause);
+    document.getElementById("next-btn").addEventListener("click", next);
+    document.getElementById("login-button").addEventListener("click", login);
+}
+
+// Start the app
+document.addEventListener("DOMContentLoaded", init);
