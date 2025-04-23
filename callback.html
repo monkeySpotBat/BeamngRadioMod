@@ -5,16 +5,20 @@
   <body>
     <script>
       // Extrahieren des Tokens aus der URL (Hash Fragment)
-      const params = new URLSearchParams(window.location.hash.substring(1)); // Entfernt das "#" und liest die Parameter
-      const token = params.get('access_token');  // Holt sich das access_token
+      const params = new URLSearchParams(window.location.hash.substring(1));
+    const token = params.get('access_token');
+    const error = params.get('error');
 
-      if (token) {
-        // Wenn das Token vorhanden ist, speichern und zur Hauptseite zurückkehren
+    if (error) {
+        console.error("Spotify Fehler:", error, params.toString());
+        alert("Fehler: " + error);
+    } else if (token) {
         localStorage.setItem("spotify_token", token);
-        window.location.href = "/"; // Zurück zur Startseite (index.html) oder zu einer anderen Seite
-      } else {
-        alert("Spotify Authentifizierung fehlgeschlagen");
-      }
+        window.opener.postMessage({ type: "spotify_auth", token }, "*");
+        window.close(); // Falls in Popup geöffnet
+    } else {
+        alert("Kein Token erhalten. Überprüfe die App-Einstellungen.");
+    }
     </script>
   </body>
 </html>
