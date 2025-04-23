@@ -5,7 +5,7 @@ let token = localStorage.getItem("spotify_token");
 
 // Funktion für die Anmeldung und Authentifizierung bei Spotify
 async function login() {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=user-read-playback-state%20user-modify-playback-state`;
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-playback-state%20user-modify-playback-state&show_dialog=true`;
     window.location.href = authUrl;
 }
 
@@ -68,3 +68,24 @@ if (window.location.hash) {
         window.location.href = "/";  // Zurück zur Startseite oder einer anderen Seite
     }
 }
+
+async function checkToken() {
+    const response = await fetch("https://api.spotify.com/v1/me", {
+        headers: { Authorization: "Bearer " + token }
+    });
+    if (response.status === 401) {
+        localStorage.removeItem("spotify_token");
+        token = null;
+        alert("Session abgelaufen. Bitte neu anmelden.");
+        window.location.reload();
+    }
+}
+
+// Füge dies zu window.onload hinzu:
+window.onload = async () => {
+    token = localStorage.getItem("spotify_token");
+    if (token) {
+        await checkToken();
+        // Rest deiner Logik...
+    }
+};
