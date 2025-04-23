@@ -1,13 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Callback</title></head>
-<body>
-  <script>
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
-    localStorage.setItem("spotify_token", accessToken);
-    window.location.href = "index.html";
-  </script>
-</body>
+<html>
+  <head>
+    <title>Spotify Redirect</title>
+  </head>
+  <body>
+    <script>
+      // Extrahieren des Tokens aus der URL (Hash Fragment)
+      const params = new URLSearchParams(window.location.hash.substring(1)); // Entfernt das "#" und liest die Parameter
+      const token = params.get('access_token');  // Holt sich das access_token
+
+      if (token) {
+        // Wenn das Token vorhanden ist, speichern und zur Hauptseite zurückkehren
+        localStorage.setItem("spotify_token", token);
+        window.location.href = "/"; // Zurück zur Startseite (index.html) oder zu einer anderen Seite
+      } else {
+        alert("Spotify Authentifizierung fehlgeschlagen");
+      }
+    </script>
+  </body>
 </html>
