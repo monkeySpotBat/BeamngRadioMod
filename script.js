@@ -1,6 +1,7 @@
 const clientId = "55dc9af460ef459ca11eca67c9ec951b"; // aus Spotify Dashboard
-const redirectUri = "https://beamngradiomod.vercel.app/callback.html";
+const redirectUri = "https://beamngradiomod.vercel.app/callback.html";  // Überprüfen, dass diese URI auch in Spotify Developer korrekt ist
 let token = localStorage.getItem("spotify_token");
+
 
 function login() {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=user-read-playback-state%20user-modify-playback-state`;
