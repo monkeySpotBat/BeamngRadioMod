@@ -1,6 +1,13 @@
 const clientId = "55dc9af460ef459ca11eca67c9ec951b"; // aus Spotify Dashboard
 const redirectUri = "https://beamngradiomod.vercel.app/callback.html";  // Überprüfen, dass diese URI auch in Spotify Developer korrekt ist
+
 let token = localStorage.getItem("spotify_token");
+if (token) {
+  // Hier geht die Anfrage an die Spotify API
+  const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+    headers: { Authorization: "Bearer " + token }
+  });
+}
 
 
 function login() {
