@@ -3,8 +3,8 @@ const redirectUri = "https://beamngradiomod.vercel.app/callback.html";
 let token = localStorage.getItem("spotify_token");
 
 function login() {
-  const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=user-read-playback-state%20user-modify-playback-state`;
-  window.location.href = authUrl;
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=user-read-playback-state%20user-modify-playback-state`;
+    window.location.href = authUrl;
 }
 
 async function play() {
