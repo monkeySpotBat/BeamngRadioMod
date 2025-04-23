@@ -1,24 +1,23 @@
 <html>
   <head>
     <title>Spotify Redirect</title>
+    <script>
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const token = params.get('access_token');
+      const error = params.get('error');
+
+      if (token) {
+        localStorage.setItem("spotify_token", token);
+        window.opener.postMessage({ type: 'spotify-auth', token }, '*');
+        window.close();
+      } else if (error) {
+        console.error("Spotify Auth Error:", error);
+        alert("Authentication failed: " + error);
+        window.close();
+      }
+    </script>
   </head>
   <body>
-    <script>
-      // Extrahieren des Tokens aus der URL (Hash Fragment)
-      const params = new URLSearchParams(window.location.hash.substring(1));
-    const token = params.get('access_token');
-    const error = params.get('error');
-
-    if (error) {
-        console.error("Spotify Fehler:", error, params.toString());
-        alert("Fehler: " + error);
-    } else if (token) {
-        localStorage.setItem("spotify_token", token);
-        window.opener.postMessage({ type: "spotify_auth", token }, "*");
-        window.close(); // Falls in Popup geöffnet
-    } else {
-        alert("Kein Token erhalten. Überprüfe die App-Einstellungen.");
-    }
-    </script>
+    <p>Redirecting...</p>
   </body>
 </html>
