@@ -1,0 +1,13 @@
+body {
+    background: #121212;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    margin-top: 100px;
+  }
+  button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 1.2em;
+  }
+  
